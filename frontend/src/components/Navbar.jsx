@@ -6,22 +6,51 @@ import { t } from '../utils/translations'
 import { FaBars, FaTimes, FaGlobe, FaUser } from 'react-icons/fa'
 
 const Navbar = () => {
-  const { user, logout } = useAuth()
+  const { user, logout, isFarmer, isDealer, isAdmin } = useAuth()
   const { language, changeLanguage } = useLanguage()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
 
-  const navLinks = [
-    { to: '/', label: t('home', language) },
-    { to: '/dashboard', label: t('dashboard', language), protected: true },
-    { to: '/crop-advisor', label: t('cropAdvisor', language), protected: true },
-    { to: '/marketplace', label: t('marketplace', language) },
-    { to: '/weather', label: t('weather', language), protected: true },
-    { to: '/schemes', label: t('schemes', language), protected: true },
-    { to: '/price-analytics', label: t('priceAnalytics', language), protected: true },
-    { to: '/agent-hub', label: t('agentHub', language), protected: true },
-    { to: '/forum', label: t('forum', language) },
-  ]
+  // Role-based navigation links
+  const getNavLinks = () => {
+    if (!user) {
+      return [
+        { to: '/', label: t('home', language) },
+        { to: '/marketplace', label: t('marketplace', language) },
+        { to: '/forum', label: t('forum', language) },
+      ]
+    }
+
+    if (isAdmin()) {
+      return [
+        { to: '/admin-dashboard', label: '👑 Admin Dashboard' },
+        { to: '/marketplace', label: t('marketplace', language) },
+        { to: '/forum', label: t('forum', language) },
+      ]
+    }
+
+    if (isDealer()) {
+      return [
+        { to: '/dealer-dashboard', label: '🏪 My Dashboard' },
+        { to: '/marketplace', label: t('marketplace', language) },
+        { to: '/forum', label: t('forum', language) },
+      ]
+    }
+
+    // Farmer links
+    return [
+      { to: '/dashboard', label: t('dashboard', language) },
+      { to: '/crop-advisor', label: t('cropAdvisor', language) },
+      { to: '/storage-finder', label: t('coldStorageFinder', language) },
+      { to: '/marketplace', label: t('marketplace', language) },
+      { to: '/weather', label: t('weather', language) },
+      { to: '/schemes', label: t('schemes', language) },
+      { to: '/price-analytics', label: t('priceAnalytics', language) },
+      { to: '/forum', label: t('forum', language) },
+    ]
+  }
+
+  const navLinks = getNavLinks()
 
   const handleLanguageChange = (lang) => {
     changeLanguage(lang)
@@ -41,15 +70,13 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
             {navLinks.map((link) => (
-              (!link.protected || user) && (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-secondary transition"
-                >
-                  {link.label}
-                </Link>
-              )
+              <Link
+                key={link.to}
+                to={link.to}
+                className="px-3 py-2 rounded-md text-sm font-medium hover:bg-secondary transition"
+              >
+                {link.label}
+              </Link>
             ))}
 
             {/* Language Selector */}
@@ -93,7 +120,14 @@ const Navbar = () => {
                   className="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-secondary transition"
                 >
                   <FaUser />
-                  <span className="text-sm">{user.name}</span>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm">{user.name}</span>
+                    <span className="text-xs opacity-75">
+                      {isAdmin() && '👑 Admin'}
+                      {isDealer() && '🏪 Dealer'}
+                      {isFarmer() && '👨‍🌾 Farmer'}
+                    </span>
+                  </div>
                 </Link>
                 <button
                   onClick={logout}
@@ -137,16 +171,14 @@ const Navbar = () => {
         <div className="md:hidden bg-secondary">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navLinks.map((link) => (
-              (!link.protected || user) && (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
-                >
-                  {link.label}
-                </Link>
-              )
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
+              >
+                {link.label}
+              </Link>
             ))}
             {user ? (
               <>
@@ -157,6 +189,11 @@ const Navbar = () => {
                 >
                   {t('profile', language)}
                 </Link>
+                <div className="px-3 py-2 text-sm">
+                  {isAdmin() && '👑 Admin'}
+                  {isDealer() && '🏪 Dealer'}
+                  {isFarmer() && '👨‍🌾 Farmer'}
+                </div>
                 <button
                   onClick={() => {
                     logout()

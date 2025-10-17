@@ -12,31 +12,91 @@ const generateToken = (id) => {
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, phone, role, location, language } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      phone, 
+      role, 
+      location, 
+      language,
+      // Dealer-specific fields
+      businessName,
+      businessAddress,
+      gstNumber,
+      licenseNumber,
+      specialization,
+      // Farmer-specific fields
+      farmSize,
+      crops
+    } = req.body;
 
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+    // Validation
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Please provide name, email, and password' });
     }
 
-    const user = await User.create({
+    if (!role || !['farmer', 'dealer'].includes(role)) {
+      return res.status(400).json({ message: 'Please select a valid role (farmer or dealer)' });
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Prepare user data
+    const userData = {
       name,
       email,
       password,
       phone,
       role,
       location,
-      language,
-    });
+      language: language || 'en',
+    };
+
+    // Add role-specific data
+    if (role === 'dealer') {
+      userData.dealerInfo = {
+        businessName,
+        businessAddress,
+        gstNumber,
+        licenseNumber,
+        specialization: specialization || [],
+        approved: false, // Dealers need admin approval
+      };
+    } else if (role === 'farmer') {
+      userData.farmerInfo = {
+        farmSize,
+        crops: crops || [],
+      };
+    }
+
+    // Create user
+    const user = await User.create(userData);
+
+    // Prepare response message
+    let message = 'Registration successful';
+    if (role === 'dealer') {
+      message = 'Registration successful. Your dealer account is pending admin approval.';
+    }
 
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      success: true,
+      message,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        approved: role === 'dealer' ? false : true,
+      },
       token: generateToken(user._id),
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -46,20 +106,76 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
-    if (user && (await user.matchPassword(password))) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        language: user.language,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
     }
+
+    // Find user
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check password
+    const isPasswordValid = await user.matchPassword(password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Check if account is active
+    if (!user.isActive) {
+      return res.status(403).json({ message: 'Your account has been deactivated. Please contact admin.' });
+    }
+
+    // Check if dealer is approved
+    if (user.role === 'dealer' && !user.isDealerApproved()) {
+      return res.status(403).json({ 
+        message: 'Your dealer account is pending admin approval.',
+        approved: false,
+        role: 'dealer'
+      });
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Prepare response data
+    const responseData = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      location: user.location,
+      language: user.language,
+      isActive: user.isActive,
+    };
+
+    // Add role-specific data
+    if (user.role === 'dealer') {
+      responseData.dealerInfo = {
+        businessName: user.dealerInfo?.businessName,
+        approved: user.dealerInfo?.approved,
+        specialization: user.dealerInfo?.specialization,
+      };
+    } else if (user.role === 'farmer') {
+      responseData.farmerInfo = {
+        farmSize: user.farmerInfo?.farmSize,
+        crops: user.farmerInfo?.crops,
+      };
+    }
+
+    res.json({
+      success: true,
+      user: responseData,
+      token: generateToken(user._id),
+    });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
   }
 });

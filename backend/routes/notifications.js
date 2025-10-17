@@ -2,12 +2,9 @@ import express from 'express';
 import Notification from '../models/Notification.js';
 import { protect } from '../middleware/auth.js';
 import { sendEmail } from '../config/nodemailer.js';
-import { admin, initializeFirebase } from '../config/firebase.js';
+import { admin } from '../config/firebase.js';
 
 const router = express.Router();
-
-// Initialize Firebase
-initializeFirebase();
 
 // Get user notifications
 router.get('/', protect, async (req, res) => {

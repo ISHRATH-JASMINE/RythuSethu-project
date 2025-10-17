@@ -6,7 +6,10 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import DealerDashboard from './pages/DealerDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 import CropAdvisor from './pages/CropAdvisor'
+import StorageFinder from './pages/StorageFinder'
 import Marketplace from './pages/Marketplace'
 import ProductDetails from './pages/ProductDetails'
 import AddProduct from './pages/AddProduct'
@@ -24,6 +27,20 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" />
 }
 
+function RoleBasedRoute({ children, allowedRoles }) {
+  const { user } = useAuth()
+  
+  if (!user) {
+    return <Navigate to="/login" />
+  }
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" />
+  }
+  
+  return children
+}
+
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -31,10 +48,24 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        
+        {/* Role-specific dashboards */}
+        <Route path="/dealer-dashboard" element={
+          <RoleBasedRoute allowedRoles={['dealer']}>
+            <DealerDashboard />
+          </RoleBasedRoute>
+        } />
+        <Route path="/admin-dashboard" element={
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </RoleBasedRoute>
+        } />
+        
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="crop-advisor" element={<PrivateRoute><CropAdvisor /></PrivateRoute>} />
+          <Route path="storage-finder" element={<PrivateRoute><StorageFinder /></PrivateRoute>} />
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="marketplace/:id" element={<ProductDetails />} />
           <Route path="marketplace/add" element={<PrivateRoute><AddProduct /></PrivateRoute>} />
