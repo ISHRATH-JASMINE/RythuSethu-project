@@ -19,9 +19,9 @@ router.get('/', async (req, res) => {
     }
 
     const posts = await ForumPost.find(query)
-      .populate('author', 'name profileImage location')
-      .populate('comments.user', 'name profileImage')
-      .sort({ createdAt: -1 });
+      .populate('author', 'name role profileImage location')
+      .populate('comments.user', 'name role profileImage')
+      .sort({ isPinned: -1, createdAt: -1 }); // Pinned posts first, then by date
 
     res.json(posts);
   } catch (error) {
@@ -33,8 +33,8 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const post = await ForumPost.findById(req.params.id)
-      .populate('author', 'name profileImage location')
-      .populate('comments.user', 'name profileImage');
+      .populate('author', 'name role profileImage location')
+      .populate('comments.user', 'name role profileImage');
 
     if (post) {
       res.json(post);
@@ -55,7 +55,7 @@ router.post('/', protect, async (req, res) => {
     });
 
     const populatedPost = await ForumPost.findById(post._id)
-      .populate('author', 'name profileImage location');
+      .populate('author', 'name role profileImage location');
 
     res.status(201).json(populatedPost);
   } catch (error) {
@@ -94,12 +94,34 @@ router.delete('/:id', protect, async (req, res) => {
     const post = await ForumPost.findById(req.params.id);
 
     if (post) {
-      if (post.author.toString() !== req.user._id.toString()) {
+      // Allow admin to delete any post, or author to delete their own
+      if (post.author.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
         return res.status(403).json({ message: 'Not authorized' });
       }
 
       await post.deleteOne();
       res.json({ message: 'Post removed' });
+    } else {
+      res.status(404).json({ message: 'Post not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Pin/Unpin post (Admin only)
+router.put('/:id/pin', protect, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const post = await ForumPost.findById(req.params.id);
+
+    if (post) {
+      post.isPinned = !post.isPinned;
+      await post.save();
+      res.json({ message: post.isPinned ? 'Post pinned' : 'Post unpinned', isPinned: post.isPinned });
     } else {
       res.status(404).json({ message: 'Post not found' });
     }
@@ -147,7 +169,7 @@ router.post('/:id/comment', protect, async (req, res) => {
       await post.save();
 
       const updatedPost = await ForumPost.findById(post._id)
-        .populate('comments.user', 'name profileImage');
+        .populate('comments.user', 'name role profileImage');
 
       res.status(201).json(updatedPost.comments[updatedPost.comments.length - 1]);
     } else {

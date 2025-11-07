@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
 import { initializeFirebase } from './config/firebase.js';
 import authRoutes from './routes/auth.js';
@@ -17,8 +19,16 @@ import dealerRoutes from './routes/dealer.js';
 import adminRoutes from './routes/admin.js';
 import farmerRoutes from './routes/farmer.js';
 import publicRoutes from './routes/public.js';
+import cropPricesRoutes from './routes/cropPrices.js';
+import bookingRoutes from './routes/bookings.js';
+import ratingRoutes from './routes/ratings.js';
+import buyingRatesRoutes from './routes/buyingRates.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +62,18 @@ app.use('/api/dealer', dealerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/farmer', farmerRoutes);
 app.use('/api/public', publicRoutes);
+
+// Crop prices routes
+app.use('/api/crop-prices', cropPricesRoutes);
+
+// Booking routes
+app.use('/api/bookings', bookingRoutes);
+
+// Rating routes
+app.use('/api/ratings', ratingRoutes);
+
+// Buying rates routes
+app.use('/api/buying-rates', buyingRatesRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

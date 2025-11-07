@@ -15,6 +15,7 @@ router.get('/dashboard', protect, admin, async (req, res) => {
   try {
     const [
       totalUsers,
+      totalAdmins,
       totalFarmers,
       totalDealers,
       pendingDealers,
@@ -26,6 +27,7 @@ router.get('/dashboard', protect, admin, async (req, res) => {
       recentDealers
     ] = await Promise.all([
       User.countDocuments({ role: { $ne: 'admin' } }),
+      User.countDocuments({ role: 'admin' }),
       User.countDocuments({ role: 'farmer' }),
       User.countDocuments({ role: 'dealer' }),
       User.countDocuments({ role: 'dealer', 'dealerInfo.approved': false }),
@@ -47,6 +49,7 @@ router.get('/dashboard', protect, admin, async (req, res) => {
       success: true,
       statistics: {
         totalUsers,
+        totalAdmins,
         totalFarmers,
         totalDealers,
         pendingDealers,

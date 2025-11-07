@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useLanguage } from '../context/LanguageContext';
-import { t } from '../utils/translations';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,7 +14,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const StorageFinder = () => {
-  const { language } = useLanguage();
+  const { t } = useTranslation();
   const [searchType, setSearchType] = useState('pincode'); // 'pincode' or 'gps'
   const [pincode, setPincode] = useState('');
   const [storageType, setStorageType] = useState('all');
@@ -26,10 +25,10 @@ const StorageFinder = () => {
   const [error, setError] = useState('');
 
   const storageTypes = [
-    { value: 'all', label: 'All Types' },
-    { value: 'Cold Storage', label: 'Cold Storage' },
-    { value: 'Mandi', label: 'Mandi' },
-    { value: 'Warehouse', label: 'Warehouse' },
+    { value: 'all', label: t('common.all') },
+    { value: 'Cold Storage', label: t('storage.coldStorage') },
+    { value: 'Mandi', label: t('storage.mandi') },
+    { value: 'Warehouse', label: t('storage.warehouse') },
     { value: 'Processing Unit', label: 'Processing Unit' }
   ];
 
@@ -52,11 +51,14 @@ const StorageFinder = () => {
       setSearchLocation(response.data.searchLocation || null);
       
       if (response.data.storages.length === 0) {
-        setError('No cold storages found for this pincode');
+        setError('No storage facilities found for this pincode or nearby region');
+      } else if (response.data.message && response.data.message.includes('No exact')) {
+        // Show info message instead of error for nearby results
+        setError('');
       }
     } catch (err) {
       console.error('Search error:', err);
-      setError('Failed to fetch cold storages. Please try again.');
+      setError('Failed to fetch storage facilities. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -133,10 +135,10 @@ const StorageFinder = () => {
             <span className="text-4xl">❄️</span>
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-3">
-            {t('coldStorageFinder', language)}
+            {t('storage.title')}
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Find nearby cold storages, mandis, and warehouses to store your produce safely
+            {t('storage.findNearby')}
           </p>
         </div>
 
@@ -155,7 +157,7 @@ const StorageFinder = () => {
               >
                 <div className="flex items-center justify-center space-x-2">
                   <span className="text-2xl">📮</span>
-                  <span>{t('searchByPincode', language)}</span>
+                  <span>{t('storage.searchByPincode')}</span>
                 </div>
               </button>
               <button
@@ -168,7 +170,7 @@ const StorageFinder = () => {
               >
                 <div className="flex items-center justify-center space-x-2">
                   <span className="text-2xl">📍</span>
-                  <span>{t('useMyLocation', language)}</span>
+                  <span>{t('storage.useMyLocation')}</span>
                 </div>
               </button>
             </div>
@@ -178,7 +180,7 @@ const StorageFinder = () => {
               <div className="mb-6">
                 <label className="block text-gray-700 font-semibold mb-3 flex items-center">
                   <span className="mr-2">🏪</span>
-                  {t('storageType', language)}
+                  {t('storage.storageType')}
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                   {storageTypes.map((type) => (
@@ -202,7 +204,7 @@ const StorageFinder = () => {
                 <form onSubmit={handlePincodeSearch} className="space-y-6">
                   <div>
                     <label className="block text-gray-700 font-semibold mb-3">
-                      {t('pincode', language)}
+                      {t('storage.pincode')}
                     </label>
                     <div className="relative">
                       <input
@@ -227,14 +229,14 @@ const StorageFinder = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        Searching...
+                        {t('storage.searching')}
                       </div>
                     ) : (
                       <div className="flex items-center justify-center">
                         <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        {t('search', language)}
+                        {t('common.search')}
                       </div>
                     )}
                   </button>
@@ -266,7 +268,7 @@ const StorageFinder = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        Detecting Location...
+                        {t('storage.locating')}
                       </div>
                     ) : (
                       <div className="flex items-center justify-center">
@@ -274,7 +276,7 @@ const StorageFinder = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        Find Storages Near Me
+                        {t('storage.findNearMe')}
                       </div>
                     )}
                   </button>
@@ -367,9 +369,20 @@ const StorageFinder = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                         <p className="text-gray-700 font-medium">
-                          {storage.address.village && `${storage.address.village}, `}
-                          {storage.address.mandal && `${storage.address.mandal}, `}
-                          {storage.address.district}, {storage.address.state} - {storage.address.pincode}
+                          {(() => {
+                            // Filter out duplicate location parts
+                            const parts = [
+                              storage.address.village,
+                              storage.address.mandal,
+                              storage.address.district,
+                              storage.address.state
+                            ].filter(Boolean); // Remove null/undefined
+                            
+                            // Remove duplicates while preserving order
+                            const unique = [...new Set(parts)];
+                            
+                            return unique.join(', ') + ` - ${storage.address.pincode}`;
+                          })()}
                         </p>
                       </div>
 

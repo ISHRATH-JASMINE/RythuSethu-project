@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
-import { t } from '../utils/translations'
+import { useTranslation } from 'react-i18next'
 import { FaBars, FaTimes, FaGlobe, FaUser } from 'react-icons/fa'
 
 const Navbar = () => {
   const { user, logout, isFarmer, isDealer, isAdmin } = useAuth()
   const { language, changeLanguage } = useLanguage()
+  const { t } = useTranslation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [langDropdownOpen, setLangDropdownOpen] = useState(false)
 
@@ -15,38 +16,33 @@ const Navbar = () => {
   const getNavLinks = () => {
     if (!user) {
       return [
-        { to: '/', label: t('home', language) },
-        { to: '/marketplace', label: t('marketplace', language) },
-        { to: '/forum', label: t('forum', language) },
+        { to: '/', label: t('common.home') },
+        { to: '/forum', label: t('common.forum') },
       ]
     }
 
     if (isAdmin()) {
       return [
-        { to: '/admin-dashboard', label: '👑 Admin Dashboard' },
-        { to: '/marketplace', label: t('marketplace', language) },
-        { to: '/forum', label: t('forum', language) },
+        { to: '/admin-dashboard', label: `👑 ${t('dashboard.adminDashboard')}` },
+        { to: '/forum', label: t('common.forum') },
       ]
     }
 
     if (isDealer()) {
       return [
-        { to: '/dealer-dashboard', label: '🏪 My Dashboard' },
-        { to: '/marketplace', label: t('marketplace', language) },
-        { to: '/forum', label: t('forum', language) },
+        { to: '/dealer-dashboard', label: `🏪 ${t('dashboard.dealerDashboard')}` },
+        { to: '/forum', label: t('common.forum') },
       ]
     }
 
     // Farmer links
     return [
-      { to: '/dashboard', label: t('dashboard', language) },
-      { to: '/crop-advisor', label: t('cropAdvisor', language) },
-      { to: '/storage-finder', label: t('coldStorageFinder', language) },
-      { to: '/marketplace', label: t('marketplace', language) },
-      { to: '/weather', label: t('weather', language) },
-      { to: '/schemes', label: t('schemes', language) },
-      { to: '/price-analytics', label: t('priceAnalytics', language) },
-      { to: '/forum', label: t('forum', language) },
+      { to: '/dashboard', label: t('common.dashboard') },
+      { to: '/crop-advisor', label: t('common.cropAdvisor') },
+      { to: '/crop-prices', label: '💰 Crop Prices' },
+      { to: '/storage-finder', label: t('storage.title') },
+      { to: '/schemes', label: t('common.schemes') },
+      { to: '/forum', label: t('common.forum') },
     ]
   }
 
@@ -125,7 +121,7 @@ const Navbar = () => {
                     <span className="text-xs opacity-75">
                       {isAdmin() && '👑 Admin'}
                       {isDealer() && '🏪 Dealer'}
-                      {isFarmer() && '👨‍🌾 Farmer'}
+                      {isFarmer() && `👨‍🌾 ${t('auth.farmer')}`}
                     </span>
                   </div>
                 </Link>
@@ -133,7 +129,7 @@ const Navbar = () => {
                   onClick={logout}
                   className="px-4 py-2 bg-red-600 rounded-md text-sm font-medium hover:bg-red-700 transition"
                 >
-                  {t('logout', language)}
+                  {t('common.logout')}
                 </button>
               </div>
             ) : (
@@ -142,13 +138,13 @@ const Navbar = () => {
                   to="/login"
                   className="px-4 py-2 rounded-md text-sm font-medium hover:bg-secondary transition"
                 >
-                  {t('login', language)}
+                  {t('common.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="px-4 py-2 bg-accent text-gray-800 rounded-md text-sm font-medium hover:bg-yellow-500 transition"
                 >
-                  {t('register', language)}
+                  {t('common.register')}
                 </Link>
               </div>
             )}
@@ -187,12 +183,12 @@ const Navbar = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
                 >
-                  {t('profile', language)}
+                  {t('common.profile')}
                 </Link>
                 <div className="px-3 py-2 text-sm">
                   {isAdmin() && '👑 Admin'}
                   {isDealer() && '🏪 Dealer'}
-                  {isFarmer() && '👨‍🌾 Farmer'}
+                  {isFarmer() && `👨‍🌾 ${t('auth.farmer')}`}
                 </div>
                 <button
                   onClick={() => {
@@ -201,7 +197,7 @@ const Navbar = () => {
                   }}
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
                 >
-                  {t('logout', language)}
+                  {t('common.logout')}
                 </button>
               </>
             ) : (
@@ -211,14 +207,14 @@ const Navbar = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
                 >
-                  {t('login', language)}
+                  {t('common.login')}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-3 py-2 rounded-md text-base font-medium hover:bg-primary"
                 >
-                  {t('register', language)}
+                  {t('common.register')}
                 </Link>
               </>
             )}

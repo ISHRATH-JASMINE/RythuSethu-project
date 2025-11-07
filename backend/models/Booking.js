@@ -2,12 +2,11 @@ import mongoose from 'mongoose';
 
 /**
  * Booking Model
- * Manages bookings between farmers and dealers
+ * Manages appointments between farmers and dealers
  */
 const bookingSchema = new mongoose.Schema({
   bookingId: {
     type: String,
-    required: true,
     unique: true,
   },
   farmer: {
@@ -15,62 +14,45 @@ const bookingSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'Farmer reference is required'],
   },
+  farmerName: {
+    type: String,
+    required: true,
+  },
   dealer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Dealer reference is required'],
   },
-  cropPrice: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'CropPrice',
+  dealerName: {
+    type: String,
+    required: true,
   },
-  cropDetails: {
-    name: {
-      type: String,
-      required: true,
-    },
-    variety: String,
-    quantity: {
-      type: Number,
-      required: true,
-      min: [0, 'Quantity must be positive'],
-    },
-    unit: {
-      type: String,
-      enum: ['kg', 'quintal', 'ton', 'piece'],
-      default: 'quintal',
-    },
-    agreedPrice: {
-      type: Number,
-      required: true,
-    },
-    pricePerUnit: String,
-    totalAmount: {
-      type: Number,
-      required: true,
-    },
+  cropName: {
+    type: String,
+    required: true,
   },
-  pickupDetails: {
-    address: String,
-    location: {
-      latitude: Number,
-      longitude: Number,
-    },
-    preferredDate: Date,
-    preferredTime: String,
+  date: {
+    type: Date,
+    required: true,
+  },
+  timeSlot: {
+    type: String,
+    enum: ['Morning', 'Afternoon', 'Evening'],
+    required: true,
   },
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'in-progress', 'completed', 'cancelled', 'rejected'],
-    default: 'pending',
+    enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
+    default: 'Pending',
+  },
+  notes: {
+    type: String,
   },
   farmerNotes: {
     type: String,
-    maxlength: 500,
   },
   dealerNotes: {
     type: String,
-    maxlength: 500,
   },
   statusHistory: [{
     status: String,
@@ -84,47 +66,12 @@ const bookingSchema = new mongoose.Schema({
     },
     notes: String,
   }],
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'partial', 'completed', 'refunded'],
-    default: 'pending',
-  },
-  paymentDetails: {
-    method: {
-      type: String,
-      enum: ['cash', 'upi', 'bank_transfer', 'cheque'],
-    },
-    transactionId: String,
-    paidAmount: Number,
-    paidAt: Date,
-  },
-  rating: {
-    farmerRating: {
-      stars: {
-        type: Number,
-        min: 1,
-        max: 5,
-      },
-      review: String,
-      ratedAt: Date,
-    },
-    dealerRating: {
-      stars: {
-        type: Number,
-        min: 1,
-        max: 5,
-      },
-      review: String,
-      ratedAt: Date,
-    },
-  },
   cancellationReason: String,
   cancelledBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
   cancelledAt: Date,
-  completedAt: Date,
   createdAt: {
     type: Date,
     default: Date.now,
@@ -133,6 +80,52 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Legacy fields for backward compatibility
+  cropPrice: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CropPrice',
+  },
+  cropDetails: {
+    name: String,
+    variety: String,
+    quantity: Number,
+    unit: String,
+    agreedPrice: Number,
+    pricePerUnit: String,
+    totalAmount: Number,
+  },
+  pickupDetails: {
+    address: String,
+    location: {
+      latitude: Number,
+      longitude: Number,
+    },
+    preferredDate: Date,
+    preferredTime: String,
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'partial', 'completed', 'refunded'],
+  },
+  paymentDetails: {
+    method: String,
+    transactionId: String,
+    paidAmount: Number,
+    paidAt: Date,
+  },
+  rating: {
+    farmerRating: {
+      stars: Number,
+      review: String,
+      ratedAt: Date,
+    },
+    dealerRating: {
+      stars: Number,
+      review: String,
+      ratedAt: Date,
+    },
+  },
+  completedAt: Date,
 });
 
 // Generate unique booking ID
@@ -150,10 +143,10 @@ bookingSchema.pre('save', async function(next) {
   next();
 });
 
-// Indexes for faster queries
-// Note: bookingId already has unique index from schema definition
+// Indexes for faster queries and duplicate prevention
 bookingSchema.index({ farmer: 1, createdAt: -1 });
 bookingSchema.index({ dealer: 1, createdAt: -1 });
+bookingSchema.index({ dealer: 1, date: 1, timeSlot: 1 }); // For duplicate checking
 bookingSchema.index({ status: 1 });
 bookingSchema.index({ createdAt: -1 });
 

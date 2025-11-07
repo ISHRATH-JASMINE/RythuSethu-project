@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useLanguage } from '../context/LanguageContext'
-import { t } from '../utils/translations'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
+import { Eye, EyeOff } from 'lucide-react'
 
 const Register = () => {
+  const { t } = useTranslation()
+  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -35,7 +37,6 @@ const Register = () => {
   const [specializationInput, setSpecializationInput] = useState('')
 
   const { register } = useAuth()
-  const { language } = useLanguage()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -69,14 +70,14 @@ const Register = () => {
       const result = await register(submitData)
       
       if (formData.role === 'dealer' && result.dealerInfo && !result.dealerInfo.approved) {
-        toast.warning('Registration successful! Your dealer account is pending admin approval.')
+        toast.warning(t('register.dealerPendingApproval'))
         navigate('/login')
       } else {
-        toast.success('Registration successful!')
+        toast.success(t('register.registrationSuccess'))
         navigate('/dashboard')
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Registration failed')
+      toast.error(error.response?.data?.message || t('register.registrationFailed'))
     }
   }
 
@@ -132,16 +133,16 @@ const Register = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('register', language)}
+            {t('register.title')}
           </h1>
-          <p className="text-gray-600">Join RythuSetu Community</p>
+          <p className="text-gray-600">{t('register.subtitle')}</p>
         </div>
 
         <form className="bg-white rounded-lg shadow-md p-6 space-y-6" onSubmit={handleSubmit}>
           {/* Role Selection - Simplified */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              I am a *
+              {t('register.iAmA')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -154,7 +155,7 @@ const Register = () => {
                 }`}
               >
                 <div className="text-3xl mb-1">👨‍🌾</div>
-                <div className="font-semibold text-gray-900">Farmer</div>
+                <div className="font-semibold text-gray-900">{t('register.farmer')}</div>
               </button>
 
               <button
@@ -167,7 +168,7 @@ const Register = () => {
                 }`}
               >
                 <div className="text-3xl mb-1">🏪</div>
-                <div className="font-semibold text-gray-900">Dealer</div>
+                <div className="font-semibold text-gray-900">{t('register.dealer')}</div>
               </button>
             </div>
           </div>
@@ -176,7 +177,7 @@ const Register = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name *
+                {t('register.name')}
               </label>
               <input
                 type="text"
@@ -184,13 +185,13 @@ const Register = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter your name"
+                placeholder={t('register.namePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mobile Number *
+                {t('register.mobileNumber')}
               </label>
               <input
                 type="tel"
@@ -199,13 +200,13 @@ const Register = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="10-digit number"
+                placeholder={t('register.mobilePlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email *
+                {t('register.email')}
               </label>
               <input
                 type="email"
@@ -213,29 +214,43 @@ const Register = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="your@email.com"
+                placeholder={t('register.emailPlaceholder')}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password *
+                {t('register.password')}
               </label>
-              <input
-                type="password"
-                required
-                minLength="6"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Min 6 characters"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength="6"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder={t('register.passwordPlaceholder')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Location Information */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Location</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-3">{t('register.location')}</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <input
@@ -247,7 +262,7 @@ const Register = () => {
                     ...formData, 
                     location: { ...formData.location, state: e.target.value }
                   })}
-                  placeholder="State *"
+                  placeholder={t('register.statePlaceholder')}
                 />
               </div>
 
@@ -261,7 +276,7 @@ const Register = () => {
                     ...formData, 
                     location: { ...formData.location, district: e.target.value }
                   })}
-                  placeholder="District *"
+                  placeholder={t('register.districtPlaceholder')}
                 />
               </div>
 
@@ -274,7 +289,7 @@ const Register = () => {
                     ...formData, 
                     location: { ...formData.location, village: e.target.value }
                   })}
-                  placeholder="Village/City"
+                  placeholder={t('register.villagePlaceholder')}
                 />
               </div>
 
@@ -288,7 +303,7 @@ const Register = () => {
                     ...formData, 
                     location: { ...formData.location, pincode: e.target.value }
                   })}
-                  placeholder="Pincode (6 digits)"
+                  placeholder={t('register.pincodePlaceholder')}
                 />
               </div>
             </div>
@@ -299,7 +314,7 @@ const Register = () => {
             <div className="bg-green-50 border border-green-200 rounded-md p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                 <span className="mr-2">🌾</span>
-                Farm Details
+                {t('register.farmDetails')}
               </h3>
               
               <div className="space-y-3">
@@ -314,7 +329,7 @@ const Register = () => {
                       ...formData,
                       farmerInfo: { ...formData.farmerInfo, farmSize: e.target.value }
                     })}
-                    placeholder="Farm size in acres (optional)"
+                    placeholder={t('register.farmSizePlaceholder')}
                   />
                 </div>
 
@@ -326,14 +341,14 @@ const Register = () => {
                       value={cropInput}
                       onChange={(e) => setCropInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCrop())}
-                      placeholder="Add crops (optional)"
+                      placeholder={t('register.addCropsPlaceholder')}
                     />
                     <button
                       type="button"
                       onClick={addCrop}
                       className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
                     >
-                      Add
+                      {t('register.addButton')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -363,7 +378,7 @@ const Register = () => {
             <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                 <span className="mr-2">🏪</span>
-                Business Details
+                {t('register.businessDetails')}
               </h3>
               
               <div className="space-y-3">
@@ -377,7 +392,7 @@ const Register = () => {
                       ...formData,
                       dealerInfo: { ...formData.dealerInfo, businessName: e.target.value }
                     })}
-                    placeholder="Business/Shop Name *"
+                    placeholder={t('register.businessNamePlaceholder')}
                   />
                 </div>
 
@@ -392,7 +407,7 @@ const Register = () => {
                         ...formData,
                         dealerInfo: { ...formData.dealerInfo, gstNumber: e.target.value.toUpperCase() }
                       })}
-                      placeholder="GST Number (optional)"
+                      placeholder={t('register.gstPlaceholder')}
                     />
                   </div>
 
@@ -405,7 +420,7 @@ const Register = () => {
                         ...formData,
                         dealerInfo: { ...formData.dealerInfo, licenseNumber: e.target.value }
                       })}
-                      placeholder="License Number (optional)"
+                      placeholder={t('register.licensePlaceholder')}
                     />
                   </div>
                 </div>
@@ -418,14 +433,14 @@ const Register = () => {
                       value={specializationInput}
                       onChange={(e) => setSpecializationInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecialization())}
-                      placeholder="Crops you deal in (optional)"
+                      placeholder={t('register.specializationPlaceholder')}
                     />
                     <button
                       type="button"
                       onClick={addSpecialization}
                       className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
                     >
-                      Add
+                      {t('register.addButton')}
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -449,7 +464,7 @@ const Register = () => {
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-3">
                   <p className="text-xs text-yellow-800">
-                    ⚠️ Admin will verify your account before activation
+                    ⚠️ {t('register.adminVerification')}
                   </p>
                 </div>
               </div>
@@ -462,15 +477,15 @@ const Register = () => {
               type="submit"
               className="w-full py-2 px-4 border border-transparent font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-1 focus:ring-offset-2 focus:ring-green-500 transition-colors"
             >
-              {formData.role === 'dealer' ? 'Register & Request Approval' : 'Register'}
+              {formData.role === 'dealer' ? t('register.registerDealerButton') : t('register.registerButton')}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
+              {t('register.alreadyHaveAccount')}{' '}
               <Link to="/login" className="font-medium text-green-600 hover:text-green-700">
-                Login
+                {t('register.loginLink')}
               </Link>
             </p>
           </div>

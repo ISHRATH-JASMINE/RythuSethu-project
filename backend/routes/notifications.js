@@ -1,8 +1,9 @@
 import express from 'express';
 import Notification from '../models/Notification.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/auth.js';
 import { sendEmail } from '../config/nodemailer.js';
 import { admin } from '../config/firebase.js';
+import { sendBookingReminders, checkOverdueBookings } from '../services/bookingReminders.js';
 
 const router = express.Router();
 
@@ -134,6 +135,26 @@ router.post('/test', protect, async (req, res) => {
     });
 
     res.json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Send booking reminders (Admin only - can be called by cron job)
+router.post('/send-reminders', protect, authorize('admin'), async (req, res) => {
+  try {
+    const result = await sendBookingReminders();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Check overdue bookings (Admin only - can be called by cron job)
+router.post('/check-overdue', protect, authorize('admin'), async (req, res) => {
+  try {
+    const result = await checkOverdueBookings();
+    res.json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

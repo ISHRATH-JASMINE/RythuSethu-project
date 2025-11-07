@@ -42,6 +42,16 @@ const userSchema = new mongoose.Schema({
     },
     approvedAt: Date,
     rejectionReason: String,
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5
+    },
+    totalRatings: {
+      type: Number,
+      default: 0
+    }
   },
   // Farmer-specific fields
   farmerInfo: {

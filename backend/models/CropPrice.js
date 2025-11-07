@@ -19,6 +19,14 @@ const cropPriceSchema = new mongoose.Schema({
     required: [true, 'Price is required'],
     min: [0, 'Price cannot be negative'],
   },
+  pricePerQuintal: {
+    type: Number,
+    min: [0, 'Price cannot be negative'],
+  },
+  pricePerKg: {
+    type: Number,
+    min: [0, 'Price cannot be negative'],
+  },
   unit: {
     type: String,
     enum: ['kg', 'quintal', 'ton', 'piece'],
@@ -31,6 +39,30 @@ const cropPriceSchema = new mongoose.Schema({
       default: 0,
     },
     unit: String,
+  },
+  stockAvailable: {
+    type: Number,
+    default: 0,
+  },
+  dealerName: {
+    type: String,
+  },
+  previousPrice: {
+    type: Number,
+    default: null,
+  },
+  priceChange: {
+    type: Number,
+    default: 0,
+  },
+  trend: {
+    type: String,
+    enum: ['up', 'down', 'stable'],
+    default: 'stable',
+  },
+  lastUpdated: {
+    type: Date,
+    default: Date.now,
   },
   location: {
     state: {
@@ -117,9 +149,37 @@ cropPriceSchema.index({ postedBy: 1 });
 cropPriceSchema.index({ createdAt: -1 });
 cropPriceSchema.index({ validUntil: 1 });
 
-// Update the updatedAt field on save
+// Update the updatedAt field on save and calculate price conversions
 cropPriceSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
+  this.lastUpdated = Date.now();
+  
+  // Calculate price conversions
+  if (this.unit === 'quintal' && this.price) {
+    this.pricePerQuintal = this.price;
+    this.pricePerKg = parseFloat((this.price / 100).toFixed(2));
+  } else if (this.unit === 'kg' && this.price) {
+    this.pricePerKg = this.price;
+    this.pricePerQuintal = parseFloat((this.price * 100).toFixed(2));
+  }
+  
+  // Set stockAvailable from quantity
+  if (this.quantity && this.quantity.available) {
+    this.stockAvailable = this.quantity.available;
+  }
+  
+  // Calculate trend
+  if (this.previousPrice && this.price) {
+    this.priceChange = this.price - this.previousPrice;
+    if (this.priceChange > 0) {
+      this.trend = 'up';
+    } else if (this.priceChange < 0) {
+      this.trend = 'down';
+    } else {
+      this.trend = 'stable';
+    }
+  }
+  
   next();
 });
 

@@ -1,6 +1,8 @@
 import express from 'express';
 import CropPrice from '../models/CropPrice.js';
 import Booking from '../models/Booking.js';
+import DealerProduct from '../models/DealerProduct.js';
+import BuyingRate from '../models/BuyingRate.js';
 import { protect, approvedDealer, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -274,6 +276,11 @@ router.get('/dashboard', protect, approvedDealer, async (req, res) => {
       totalBookings,
       pendingBookings,
       completedBookings,
+      totalProducts,
+      activeProducts,
+      lowStockProducts,
+      totalBuyingRates,
+      activeBuyingRates,
       recentPrices,
       recentBookings
     ] = await Promise.all([
@@ -282,6 +289,15 @@ router.get('/dashboard', protect, approvedDealer, async (req, res) => {
       Booking.countDocuments({ dealer: req.user._id }),
       Booking.countDocuments({ dealer: req.user._id, status: 'pending' }),
       Booking.countDocuments({ dealer: req.user._id, status: 'completed' }),
+      DealerProduct.countDocuments({ dealer: req.user._id }),
+      DealerProduct.countDocuments({ dealer: req.user._id, status: 'active' }),
+      DealerProduct.countDocuments({ 
+        dealer: req.user._id, 
+        status: 'active',
+        $expr: { $lte: ['$stock.quantity', '$stock.lowStockThreshold'] }
+      }),
+      BuyingRate.countDocuments({ dealer: req.user._id }),
+      BuyingRate.countDocuments({ dealer: req.user._id, status: 'active', validUntil: { $gt: new Date() } }),
       CropPrice.find({ postedBy: req.user._id })
         .sort({ createdAt: -1 })
         .limit(5),
@@ -299,6 +315,11 @@ router.get('/dashboard', protect, approvedDealer, async (req, res) => {
         totalBookings,
         pendingBookings,
         completedBookings,
+        totalProducts,
+        activeProducts,
+        lowStockProducts,
+        totalBuyingRates,
+        activeBuyingRates,
       },
       recentPrices,
       recentBookings,
@@ -306,6 +327,326 @@ router.get('/dashboard', protect, approvedDealer, async (req, res) => {
   } catch (error) {
     console.error('Dealer dashboard error:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// ==================== PRODUCT MANAGEMENT ROUTES ====================
+
+/**
+ * @route   POST /api/dealer/products
+ * @desc    Create a new product
+ * @access  Private (Approved Dealers only)
+ */
+router.post('/products', protect, approvedDealer, async (req, res) => {
+  try {
+    const productData = {
+      ...req.body,
+      dealer: req.user._id,
+      location: req.body.location || {
+        state: req.user.dealerInfo?.location?.state,
+        district: req.user.dealerInfo?.location?.district,
+      },
+    };
+
+    const product = await DealerProduct.create(productData);
+
+    res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      product,
+    });
+  } catch (error) {
+    console.error('Create product error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   GET /api/dealer/products
+ * @desc    Get all products for logged-in dealer
+ * @access  Private (Approved Dealers only)
+ */
+router.get('/products', protect, approvedDealer, async (req, res) => {
+  try {
+    const { 
+      status, 
+      category, 
+      availability,
+      search,
+      page = 1, 
+      limit = 20,
+      sortBy = 'createdAt',
+      order = 'desc'
+    } = req.query;
+
+    // Build query
+    const query = { dealer: req.user._id };
+    
+    if (status && status !== 'all') {
+      query.status = status;
+    } else {
+      query.status = { $ne: 'deleted' };
+    }
+    
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    if (availability && availability !== 'all') {
+      query.availability = availability;
+    }
+    
+    if (search) {
+      query.$text = { $search: search };
+    }
+
+    // Build sort
+    const sortOptions = {};
+    sortOptions[sortBy] = order === 'asc' ? 1 : -1;
+
+    const products = await DealerProduct.find(query)
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+
+    const total = await DealerProduct.countDocuments(query);
+
+    // Get category counts
+    const categoryCounts = await DealerProduct.aggregate([
+      { $match: { dealer: req.user._id, status: { $ne: 'deleted' } } },
+      { $group: { _id: '$category', count: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      success: true,
+      products,
+      totalPages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+      total,
+      categoryCounts,
+    });
+  } catch (error) {
+    console.error('Get products error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   GET /api/dealer/products/:id
+ * @desc    Get single product by ID
+ * @access  Private (Approved Dealers only)
+ */
+router.get('/products/:id', protect, approvedDealer, async (req, res) => {
+  try {
+    const product = await DealerProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    // Check ownership
+    if (product.dealer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to access this product' 
+      });
+    }
+
+    res.json({
+      success: true,
+      product,
+    });
+  } catch (error) {
+    console.error('Get product error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/dealer/products/:id
+ * @desc    Update a product
+ * @access  Private (Approved Dealers only)
+ */
+router.put('/products/:id', protect, approvedDealer, async (req, res) => {
+  try {
+    let product = await DealerProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    // Check ownership
+    if (product.dealer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to update this product' 
+      });
+    }
+
+    // Update product
+    Object.keys(req.body).forEach(key => {
+      if (key !== 'dealer' && key !== '_id') {
+        product[key] = req.body[key];
+      }
+    });
+
+    // Update availability based on stock
+    if (req.body.stock?.quantity !== undefined) {
+      if (product.stock.quantity === 0) {
+        product.availability = 'out-of-stock';
+      } else if (product.isLowStock()) {
+        product.availability = 'limited';
+      } else {
+        product.availability = 'in-stock';
+      }
+    }
+
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Product updated successfully',
+      product,
+    });
+  } catch (error) {
+    console.error('Update product error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   DELETE /api/dealer/products/:id
+ * @desc    Delete (soft delete) a product
+ * @access  Private (Approved Dealers only)
+ */
+router.delete('/products/:id', protect, approvedDealer, async (req, res) => {
+  try {
+    const product = await DealerProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    // Check ownership
+    if (product.dealer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to delete this product' 
+      });
+    }
+
+    // Soft delete
+    product.status = 'deleted';
+    await product.save();
+
+    res.json({
+      success: true,
+      message: 'Product deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete product error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   PUT /api/dealer/products/:id/stock
+ * @desc    Update product stock
+ * @access  Private (Approved Dealers only)
+ */
+router.put('/products/:id/stock', protect, approvedDealer, async (req, res) => {
+  try {
+    const { quantity } = req.body;
+
+    if (quantity === undefined) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Quantity is required' 
+      });
+    }
+
+    const product = await DealerProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found' 
+      });
+    }
+
+    // Check ownership
+    if (product.dealer.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: 'Not authorized to update this product' 
+      });
+    }
+
+    // Update stock using the model method
+    await product.updateStock(quantity);
+
+    res.json({
+      success: true,
+      message: 'Stock updated successfully',
+      product,
+    });
+  } catch (error) {
+    console.error('Update stock error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * @route   GET /api/dealer/products/low-stock
+ * @desc    Get products with low stock
+ * @access  Private (Approved Dealers only)
+ */
+router.get('/products-low-stock', protect, approvedDealer, async (req, res) => {
+  try {
+    const products = await DealerProduct.find({
+      dealer: req.user._id,
+      status: 'active',
+      $expr: { $lte: ['$stock.quantity', '$stock.lowStockThreshold'] }
+    }).sort({ 'stock.quantity': 1 });
+
+    res.json({
+      success: true,
+      products,
+      count: products.length,
+    });
+  } catch (error) {
+    console.error('Get low stock products error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 });
 

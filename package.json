@@ -8,10 +8,19 @@
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm run dev"
   },
-  "keywords": ["agriculture", "farming", "marketplace", "ai"],
+  "keywords": [
+    "agriculture",
+    "farming",
+    "marketplace",
+    "ai"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.24",
+    "lucide-react": "^0.546.0"
   }
 }

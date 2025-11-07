@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useLanguage } from '../context/LanguageContext'
-import { t } from '../utils/translations'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'react-toastify'
+import { Eye, EyeOff } from 'lucide-react'
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
-  const { language } = useLanguage()
+  const { t } = useTranslation()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
@@ -40,17 +41,17 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="text-4xl font-extrabold text-gray-900">
-            {t('login', language)}
+            {t('common.login')}
           </h2>
           <p className="mt-2 text-lg text-gray-600">
-            {t('welcome', language)} to RythuSetu
+            {t('common.welcome')} to RythuSetu
           </p>
         </div>
         <form className="mt-8 bg-white shadow-2xl rounded-2xl p-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('email', language)}
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -58,25 +59,39 @@ const Login = () => {
                 type="email"
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="your@email.com"
+                placeholder={t('auth.email')}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('password', language)}
+                {t('auth.password')}
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={t('auth.password')}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -85,15 +100,15 @@ const Login = () => {
               type="submit"
               className="w-full flex justify-center py-4 px-4 border border-transparent text-lg font-semibold rounded-xl text-white bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transition-all transform hover:scale-[1.02]"
             >
-              {t('login', language)}
+              {t('auth.signIn')}
             </button>
           </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              {t('auth.dontHaveAccount')}{' '}
               <Link to="/register" className="font-medium text-green-600 hover:text-green-700">
-                {t('register', language)}
+                {t('auth.createAccount')}
               </Link>
             </p>
           </div>

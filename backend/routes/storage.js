@@ -54,9 +54,11 @@ router.get('/nearby', async (req, res) => {
         return {
           ...storage.toObject(),
           distance: Math.round(distance * 10) / 10, // Round to 1 decimal
-          distanceText: distance < 1 
-            ? `${Math.round(distance * 1000)}m` 
-            : `${Math.round(distance * 10) / 10}km`
+          distanceText: distance === 0 
+            ? 'Here' 
+            : distance < 1 
+              ? `${Math.round(distance * 1000)}m` 
+              : `${Math.round(distance * 10) / 10}km`
         };
       })
       .filter(storage => storage.distance <= radiusInKm)
@@ -112,9 +114,11 @@ router.get('/pincode/:pincode', async (req, res) => {
           return {
             ...storage.toObject(),
             distance: Math.round(distance * 10) / 10,
-            distanceText: distance < 1 
-              ? `${Math.round(distance * 1000)}m` 
-              : `${Math.round(distance * 10) / 10}km`,
+            distanceText: distance === 0 
+              ? 'Here' 
+              : distance < 1 
+                ? `${Math.round(distance * 1000)}m` 
+                : `${Math.round(distance * 10) / 10}km`,
             isExactMatch: storage._id.toString() === exactMatch._id.toString()
           };
         })
@@ -141,21 +145,62 @@ router.get('/pincode/:pincode', async (req, res) => {
     }
 
     // If no exact match, search nearby pincodes
-    const nearby = await ColdStorage.find({
+    let query = {
       'address.pincode': {
         $regex: `^${pincode.substring(0, 3)}` // Match first 3 digits
       },
       isActive: true
-    }).limit(parseInt(limit));
+    };
+    
+    if (type && type !== 'all') {
+      query.type = type;
+    }
+    
+    const nearby = await ColdStorage.find(query).limit(parseInt(limit));
+
+    // If we have nearby results, calculate distances from the first storage
+    let searchLocation = null;
+    let storagesWithDistance = [];
+    
+    if (nearby.length > 0) {
+      const centerStorage = nearby[0];
+      const lat = centerStorage.location.coordinates[1];
+      const lng = centerStorage.location.coordinates[0];
+      
+      searchLocation = {
+        latitude: lat,
+        longitude: lng,
+        source: `${centerStorage.address.district} region`
+      };
+      
+      storagesWithDistance = nearby.map(storage => {
+        const distance = calculateDistance(
+          lat,
+          lng,
+          storage.location.coordinates[1],
+          storage.location.coordinates[0]
+        );
+        return {
+          ...storage.toObject(),
+          distance: Math.round(distance * 10) / 10,
+          distanceText: distance === 0 
+            ? 'Here' 
+            : distance < 1 
+              ? `${Math.round(distance * 1000)}m` 
+              : `${Math.round(distance * 10) / 10}km`
+        };
+      }).sort((a, b) => a.distance - b.distance);
+    }
 
     res.json({
       success: true,
       count: nearby.length,
       pincode,
+      searchLocation,
       message: nearby.length > 0 
-        ? 'No exact pincode match. Showing nearby storages.'
-        : 'No storages found for this pincode.',
-      storages: nearby.map(storage => ({
+        ? 'No exact pincode match. Showing nearby storages in the same region.'
+        : 'No storages found for this pincode or nearby region.',
+      storages: storagesWithDistance.length > 0 ? storagesWithDistance : nearby.map(storage => ({
         ...storage.toObject(),
         distance: null,
         distanceText: 'Same region'

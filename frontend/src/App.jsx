@@ -13,13 +13,12 @@ import StorageFinder from './pages/StorageFinder'
 import Marketplace from './pages/Marketplace'
 import ProductDetails from './pages/ProductDetails'
 import AddProduct from './pages/AddProduct'
-import Weather from './pages/Weather'
 import Schemes from './pages/Schemes'
 import AgentHub from './pages/AgentHub'
 import Forum from './pages/Forum'
 import ForumPost from './pages/ForumPost'
 import Profile from './pages/Profile'
-import PriceAnalytics from './pages/PriceAnalytics'
+import CropPriceDashboard from './pages/CropPriceDashboard'
 import { useAuth } from './context/AuthContext'
 
 function PrivateRoute({ children }) {
@@ -69,13 +68,12 @@ function App() {
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="marketplace/:id" element={<ProductDetails />} />
           <Route path="marketplace/add" element={<PrivateRoute><AddProduct /></PrivateRoute>} />
-          <Route path="weather" element={<PrivateRoute><Weather /></PrivateRoute>} />
           <Route path="schemes" element={<PrivateRoute><Schemes /></PrivateRoute>} />
           <Route path="agent-hub" element={<PrivateRoute><AgentHub /></PrivateRoute>} />
           <Route path="forum" element={<Forum />} />
           <Route path="forum/:id" element={<ForumPost />} />
           <Route path="profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-          <Route path="price-analytics" element={<PrivateRoute><PriceAnalytics /></PrivateRoute>} />
+          <Route path="crop-prices" element={<PrivateRoute><CropPriceDashboard /></PrivateRoute>} />
         </Route>
       </Routes>
     </Router>

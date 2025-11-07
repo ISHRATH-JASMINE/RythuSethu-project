@@ -1,4 +1,5 @@
 // Comprehensive Crop Recommendation Service with Rule-Based Logic
+import axios from 'axios';
 
 class CropRecommendationService {
   constructor() {
@@ -285,7 +286,9 @@ class CropRecommendationService {
       return {
         ...crop,
         score: Math.round(score),
+        suitability: Math.min(Math.round(score), 100), // Add suitability alias for frontend
         suitabilityPercentage: Math.min(Math.round(score), 100),
+        expectedYield: crop.avgYield, // Add expectedYield alias for frontend
         reasons: reasons,
         recommendationLevel: this.getRecommendationLevel(score)
       };
@@ -311,7 +314,6 @@ class CropRecommendationService {
       
       if (apiKey && apiKey !== 'your_openweather_api_key') {
         // Real API call to OpenWeatherMap
-        const axios = require('axios');
         
         // Get current weather
         const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)},IN&appid=${apiKey}&units=metric`;
@@ -400,29 +402,38 @@ class CropRecommendationService {
 
   // Dummy weather data fallback
   getDummyWeatherData(location) {
-    // Dummy weather data - Replace with actual API call
+    // Generate realistic dummy weather data with proper structure
+    const baseTemp = 28;
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    const forecast = days.map((day, index) => {
+      const tempVariation = Math.floor(Math.random() * 6) - 3; // -3 to +3
+      const rainChance = Math.random();
+      return {
+        day: day,
+        temperature: baseTemp + tempVariation,
+        rainfall: rainChance > 0.6 ? Math.floor(Math.random() * 25) : 0,
+        condition: rainChance > 0.6 ? 'Rainy' : rainChance > 0.3 ? 'Cloudy' : 'Sunny'
+      };
+    });
+
     const dummyWeather = {
       location: location,
-      currentTemp: 28,
-      condition: 'Partly Cloudy',
-      humidity: 65,
-      rainfall: 'Moderate',
-      forecast7Days: [
-        { day: 'Mon', temp: 29, condition: 'Sunny', rain: 0 },
-        { day: 'Tue', temp: 28, condition: 'Cloudy', rain: 5 },
-        { day: 'Wed', temp: 27, condition: 'Rainy', rain: 20 },
-        { day: 'Thu', temp: 26, condition: 'Rainy', rain: 15 },
-        { day: 'Fri', temp: 28, condition: 'Partly Cloudy', rain: 2 },
-        { day: 'Sat', temp: 30, condition: 'Sunny', rain: 0 },
-        { day: 'Sun', temp: 31, condition: 'Sunny', rain: 0 }
-      ],
+      current: {
+        temperature: baseTemp,
+        condition: 'Partly Cloudy',
+        humidity: 65,
+        rainfall: 0,
+        windSpeed: 12
+      },
+      forecast: forecast,
       alerts: [],
       suitableForFarming: true,
       recommendation: 'Good conditions for Kharif crops. Ensure proper drainage for expected rainfall.'
     };
 
     // Add alerts based on conditions
-    if (dummyWeather.currentTemp > 35) {
+    if (dummyWeather.current.temperature > 35) {
       dummyWeather.alerts.push({
         type: 'heatwave',
         message: 'High temperature alert! Ensure adequate irrigation for crops.',
@@ -430,7 +441,7 @@ class CropRecommendationService {
       });
     }
 
-    const totalRain = dummyWeather.forecast7Days.reduce((sum, day) => sum + day.rain, 0);
+    const totalRain = forecast.reduce((sum, day) => sum + day.rainfall, 0);
     if (totalRain > 50) {
       dummyWeather.alerts.push({
         type: 'heavy_rain',
@@ -449,8 +460,8 @@ class CropRecommendationService {
       crop: cropName,
       currentPrice: this.getRandomPrice(cropName),
       trend: Math.random() > 0.5 ? 'increasing' : 'stable',
-      demandLevel: 'High',
-      priceHistory30Days: this.generatePriceHistory(cropName, 30),
+      demand: 'High', // Changed from demandLevel to demand
+      priceHistory: this.generatePriceHistory(cropName, 30), // Changed from priceHistory30Days
       recommendation: 'Market conditions are favorable for selling in the next 7-10 days.'
     };
 
@@ -485,7 +496,7 @@ class CropRecommendationService {
       const variation = 0.9 + Math.random() * 0.2;
       
       history.push({
-        date: date.toISOString().split('T')[0],
+        day: date.toISOString().split('T')[0], // Changed from 'date' to 'day'
         price: Math.round(basePrice * variation)
       });
     }

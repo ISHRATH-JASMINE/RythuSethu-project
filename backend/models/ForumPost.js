@@ -42,6 +42,10 @@ const forumPostSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   }],
+  isPinned: {
+    type: Boolean,
+    default: false,
+  },
   comments: [commentSchema],
   createdAt: {
     type: Date,

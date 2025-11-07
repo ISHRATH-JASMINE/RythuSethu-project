@@ -1,46 +1,45 @@
 import { Link } from 'react-router-dom'
-import { useLanguage } from '../context/LanguageContext'
-import { t } from '../utils/translations'
+import { useTranslation } from 'react-i18next'
 import { FaSeedling, FaStore, FaCloudSunRain, FaFileAlt, FaBriefcase, FaUsers } from 'react-icons/fa'
 
 const Home = () => {
-  const { language } = useLanguage()
+  const { t } = useTranslation()
 
   const features = [
     {
       icon: <FaSeedling className="text-5xl text-primary" />,
-      title: t('cropAdvisor', language),
-      description: 'AI-powered crop recommendations based on soil, weather, and season',
+      title: t('common.cropAdvisor'),
+      description: t('cropAdvisor.description'),
       link: '/crop-advisor'
     },
     {
       icon: <FaStore className="text-5xl text-primary" />,
-      title: t('marketplace', language),
-      description: 'Buy and sell agricultural products directly with farmers',
+      title: t('common.marketplace'),
+      description: t('marketplace.title'),
       link: '/marketplace'
     },
     {
       icon: <FaCloudSunRain className="text-5xl text-primary" />,
-      title: t('weather', language),
-      description: 'Real-time weather forecasts and soil condition insights',
+      title: t('common.weather'),
+      description: t('weather.title'),
       link: '/weather'
     },
     {
       icon: <FaFileAlt className="text-5xl text-primary" />,
-      title: t('schemes', language),
-      description: 'Explore government schemes and subsidies for farmers',
+      title: t('common.schemes'),
+      description: t('schemes.title'),
       link: '/schemes'
     },
     {
       icon: <FaBriefcase className="text-5xl text-primary" />,
-      title: t('agentHub', language),
-      description: 'Find programs, jobs, and opportunities for farmers',
+      title: t('common.agentHub'),
+      description: t('agentHub.title'),
       link: '/agent-hub'
     },
     {
       icon: <FaUsers className="text-5xl text-primary" />,
-      title: t('forum', language),
-      description: 'Join the community to discuss and share knowledge',
+      title: t('common.forum'),
+      description: t('forum.title'),
       link: '/forum'
     },
   ]
@@ -51,16 +50,16 @@ const Home = () => {
       <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold mb-6 fade-in">
-            {t('heroTitle', language)}
+            {t('hero.title')}
           </h1>
           <p className="text-xl mb-8 fade-in">
-            {t('heroSubtitle', language)}
+            {t('hero.subtitle')}
           </p>
           <Link
             to="/register"
             className="inline-block bg-accent text-gray-800 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-yellow-500 transition fade-in"
           >
-            {t('getStarted', language)}
+            {t('hero.getStarted')}
           </Link>
         </div>
       </section>
@@ -69,7 +68,7 @@ const Home = () => {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-800">
-            Our Features
+            {t('dashboard.overview')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
