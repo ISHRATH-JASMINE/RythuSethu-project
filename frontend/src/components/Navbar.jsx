@@ -39,7 +39,7 @@ const Navbar = () => {
     return [
       { to: '/dashboard', label: t('common.dashboard') },
       { to: '/crop-advisor', label: t('common.cropAdvisor') },
-      { to: '/crop-prices', label: '💰 Crop Prices' },
+      { to: '/crop-prices', label: `💰 ${t('common.cropPrices')}` },
       { to: '/storage-finder', label: t('storage.title') },
       { to: '/schemes', label: t('common.schemes') },
       { to: '/forum', label: t('common.forum') },

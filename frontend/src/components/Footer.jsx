@@ -25,22 +25,22 @@ const Footer = () => {
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link to="/crop-advisor" className="hover:text-green-400 transition-colors">
-                  Crop Advisor
+                  {t('common.cropAdvisor')}
                 </Link>
               </li>
               <li>
                 <Link to="/crop-prices" className="hover:text-green-400 transition-colors">
-                  Crop Prices
+                  {t('common.cropPrices')}
                 </Link>
               </li>
               <li>
                 <Link to="/storage-finder" className="hover:text-green-400 transition-colors">
-                  Cold Storage
+                  {t('storage.title')}
                 </Link>
               </li>
               <li>
                 <Link to="/forum" className="hover:text-green-400 transition-colors">
-                  Community Forum
+                  {t('common.forum')}
                 </Link>
               </li>
             </ul>
@@ -52,22 +52,22 @@ const Footer = () => {
             <ul className="space-y-2 text-gray-400">
               <li>
                 <Link to="/schemes" className="hover:text-green-400 transition-colors">
-                  Govt. Schemes
+                  {t('common.schemes')}
                 </Link>
               </li>
               <li>
                 <Link to="/dashboard" className="hover:text-green-400 transition-colors">
-                  Dashboard
+                  {t('common.dashboard')}
                 </Link>
               </li>
               <li>
                 <Link to="/profile" className="hover:text-green-400 transition-colors">
-                  My Profile
+                  {t('common.profile')}
                 </Link>
               </li>
               <li>
                 <Link to="/login" className="hover:text-green-400 transition-colors">
-                  Login
+                  {t('common.login')}
                 </Link>
               </li>
             </ul>

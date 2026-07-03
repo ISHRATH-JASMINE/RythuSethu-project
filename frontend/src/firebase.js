@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { getStorage } from 'firebase/storage';
+import { getAnalytics } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,17 +12,37 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
+// Check if Firebase has been configured
+const isFirebaseConfigured = !!firebaseConfig.apiKey;
 
-export const storage = getStorage(app);
-
+let app = null;
+let storage = null;
 let messaging = null;
+let analytics = null;
 
-try {
-  messaging = getMessaging(app);
-} catch (error) {
-  console.log('Firebase messaging not supported:', error);
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    storage = getStorage(app);
+    try {
+      analytics = getAnalytics(app);
+    } catch (analyticsError) {
+      console.log('Firebase analytics not supported/initialized:', analyticsError);
+    }
+    try {
+      messaging = getMessaging(app);
+    } catch (error) {
+      console.log('Firebase messaging not supported:', error);
+    }
+    console.log('✅ Firebase initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase initialization error:', error);
+  }
+} else {
+  console.warn('⚠️ Firebase credentials not configured. Firebase features (Push Notifications/Storage) will be disabled.');
 }
+
+export { storage, analytics };
 
 export const requestNotificationPermission = async () => {
   try {
