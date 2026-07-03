@@ -3,36 +3,34 @@ import dotenv from 'dotenv';
 import User from './models/User.js';
 import Product from './models/Product.js';
 import ForumPost from './models/ForumPost.js';
+import CropPrice from './models/CropPrice.js';
 
 dotenv.config();
 
 const users = [
   {
-    name: 'Ravi Kumar',
-    email: 'ravi@example.com',
-    password: 'password123',
+    name: 'Farmer Demo',
+    email: 'farmer.demo@rythusethu.demo',
+    password: 'Demo@123',
     phone: '9876543210',
     role: 'farmer',
-    language: 'te',
-    location: { state: 'Telangana', district: 'Warangal', village: 'Dharmasagar' }
-  },
-  {
-    name: 'Lakshmi Devi',
-    email: 'lakshmi@example.com',
-    password: 'password123',
-    phone: '9876543211',
-    role: 'farmer',
-    language: 'te',
-    location: { state: 'Andhra Pradesh', district: 'Krishna', village: 'Vijayawada' }
-  },
-  {
-    name: 'Ramesh Reddy',
-    email: 'ramesh@example.com',
-    password: 'password123',
-    phone: '9876543212',
-    role: 'buyer',
     language: 'en',
-    location: { state: 'Telangana', district: 'Hyderabad', village: 'Kukatpally' }
+    location: { state: 'Telangana', district: 'Warangal', village: 'Warangal' }
+  },
+  {
+    name: 'Dealer Demo',
+    email: 'dealer.demo@rythusethu.demo',
+    password: 'Demo@123',
+    phone: '9876543211',
+    role: 'dealer',
+    language: 'en',
+    dealerInfo: {
+      businessName: 'Dealer Demo Market',
+      approved: true,
+      rating: 4.7,
+      totalRatings: 18
+    },
+    location: { state: 'Telangana', district: 'Warangal', village: 'Warangal' }
   },
 ];
 
@@ -84,6 +82,59 @@ const forumPosts = [
   },
 ];
 
+const cropPrices = [
+  {
+    cropName: 'rice',
+    variety: 'Sona Masoori',
+    price: 2400,
+    unit: 'quintal',
+    quantity: { available: 120, unit: 'quintal' },
+    location: { state: 'Telangana', district: 'Warangal', market: 'Warangal Market' },
+    qualityGrade: 'A',
+    status: 'active',
+    description: 'Fresh rice stock for farmers in Warangal'
+  },
+  {
+    cropName: 'rice',
+    variety: 'Basmati',
+    price: 2500,
+    unit: 'quintal',
+    quantity: { available: 150, unit: 'quintal' },
+    location: { state: 'Andhra Pradesh', district: 'Krishna', market: 'Vijayawada Market' },
+    qualityGrade: 'A+',
+    status: 'active',
+    description: 'Premium basmati rice'
+  },
+  {
+    cropName: 'maize',
+    variety: 'Yellow Corn',
+    price: 1850,
+    unit: 'quintal',
+    quantity: { available: 180, unit: 'quintal' },
+    location: { state: 'Telangana', district: 'Warangal', market: 'Hanamkonda Market' },
+    qualityGrade: 'A',
+    status: 'active'
+  },
+  {
+    cropName: 'cotton',
+    price: 6200,
+    unit: 'quintal',
+    quantity: { available: 90, unit: 'quintal' },
+    location: { state: 'Telangana', district: 'Warangal', market: 'Warangal Cotton Market' },
+    qualityGrade: 'A+',
+    status: 'active'
+  },
+  {
+    cropName: 'wheat',
+    price: 2100,
+    unit: 'quintal',
+    quantity: { available: 200, unit: 'quintal' },
+    location: { state: 'Andhra Pradesh', district: 'Krishna', market: 'Machilipatnam Market' },
+    qualityGrade: 'A',
+    status: 'active'
+  }
+];
+
 const seedDatabase = async () => {
   try {
     // Connect to MongoDB
@@ -94,16 +145,18 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     await Product.deleteMany({});
     await ForumPost.deleteMany({});
+    await CropPrice.deleteMany({});
     console.log('🗑️  Cleared existing data');
 
     // Create users
-    const createdUsers = await User.create(users);
+    const farmerUser = await User.create(users[0]);
+    const dealerUser = await User.create(users[1]);
     console.log('✅ Created users');
 
     // Create products with seller references
     const productsWithSeller = products.map((product, index) => ({
       ...product,
-      seller: createdUsers[index % 2]._id, // Assign to farmers
+      seller: farmerUser._id,
     }));
     await Product.create(productsWithSeller);
     console.log('✅ Created products');
@@ -111,16 +164,49 @@ const seedDatabase = async () => {
     // Create forum posts with author references
     const postsWithAuthor = forumPosts.map((post, index) => ({
       ...post,
-      author: createdUsers[index]._id,
+      author: farmerUser._id,
     }));
     await ForumPost.create(postsWithAuthor);
     console.log('✅ Created forum posts');
 
+    // Create the default admin account used by the UI and docs
+    const adminUser = await User.create({
+      name: 'System Admin',
+      email: 'admin@rythusethu.in',
+      password: 'admin123',
+      phone: '9999999999',
+      role: 'admin',
+      language: 'en',
+      location: {
+        state: 'Telangana',
+        district: 'Hyderabad',
+        village: 'Hyderabad',
+        pincode: '500001'
+      },
+      isActive: true,
+    });
+    console.log('✅ Created admin user');
+
+    const cropPricesWithSeller = cropPrices.map((price) => ({
+      ...price,
+      postedBy: dealerUser._id,
+      postedByRole: 'dealer',
+      dealerName: dealerUser.dealerInfo.businessName,
+      contactInfo: {
+        phone: dealerUser.phone,
+        email: dealerUser.email,
+      },
+      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    }));
+
+    await CropPrice.create(cropPricesWithSeller);
+    console.log('✅ Created crop prices');
+
     console.log('\n🎉 Database seeded successfully!');
     console.log('\n📝 Sample Users:');
-    createdUsers.forEach(user => {
-      console.log(`   - ${user.email} (password: password123) - Role: ${user.role}`);
-    });
+    console.log(`   - ${farmerUser.email} (password: Demo@123) - Role: farmer`);
+    console.log(`   - ${dealerUser.email} (password: Demo@123) - Role: dealer`);
+    console.log(`   - ${adminUser.email} (password: admin123) - Role: admin`);
 
     process.exit(0);
   } catch (error) {

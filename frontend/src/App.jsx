@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard'
 import DealerDashboard from './pages/DealerDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import CropAdvisor from './pages/CropAdvisor'
+import Weather from './pages/Weather'
 import StorageFinder from './pages/StorageFinder'
 import Marketplace from './pages/Marketplace'
 import ProductDetails from './pages/ProductDetails'
@@ -64,6 +65,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="crop-advisor" element={<PrivateRoute><CropAdvisor /></PrivateRoute>} />
+          <Route path="weather" element={<PrivateRoute><Weather /></PrivateRoute>} />
           <Route path="storage-finder" element={<PrivateRoute><StorageFinder /></PrivateRoute>} />
           <Route path="marketplace" element={<Marketplace />} />
           <Route path="marketplace/:id" element={<ProductDetails />} />

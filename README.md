@@ -1,226 +1,175 @@
 # RythuSetu – AI-Powered Farmer Empowerment Platform
 
-A comprehensive platform that bridges the gap between farmers, buyers, and agri-experts through technology, insights, and real-time updates.
+RythuSetu is a full-stack agriculture platform for farmers, dealers, and administrators. It combines crop advice, crop prices, weather, marketplace, forum, schemes, and dealer workflows in one app.
 
-## Features
+## What Works Today
 
-- **Multilingual Interface**: Support for English, Telugu, and Hindi
-- **AI Crop Advisor**: Crop recommendations based on soil, weather, and season (dummy data)
-- **Marketplace**: Direct buying/selling platform for agricultural products
-- **Weather & Soil Insights**: Real-time forecasts and soil condition updates
-- **Government Schemes**: Browse and apply for agricultural schemes and subsidies
-- **Agent Integration**: Job suggestions, program tracking, and weekly updates
-- **Notification System**: Email alerts (Nodemailer) and push notifications (Firebase)
-- **Community Forum**: Discussion space for farmers, buyers, and experts
+- Multilingual UI with English, Telugu, and Hindi
+- Crop advisor with weather-aware recommendations
+- Crop prices dashboard with booking flow
+- Weather and soil page backed by the backend weather API
+- Marketplace and product details
+- Community forum
+- Admin, farmer, and dealer dashboards
+- Seed scripts for repeatable local demo data
 
 ## Tech Stack
 
 ### Frontend
-- Vite + React.js (.jsx)
-- Tailwind CSS
+- Vite + React
 - React Router DOM
+- Tailwind CSS
 - Axios
+- Framer Motion
 - React Toastify
-- React Icons
-- Firebase (for FCM and storage)
+- React Icons and Lucide React
 
 ### Backend
 - Node.js + Express
-- MongoDB (user data, products, forum posts)
-- Firebase Admin SDK (push notifications, storage)
-- Nodemailer (email notifications)
-- JWT Authentication
-- Bcrypt (password hashing)
-
-## Installation
-
-### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (running locally or cloud instance)
-- Firebase project (for notifications and storage)
-
-### Backend Setup
-
-1. Navigate to backend folder:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file (copy from `.env.example`):
-```bash
-cp .env.example .env
-```
-
-4. Configure environment variables in `.env`:
-- MongoDB connection string
-- JWT secret
-- Email credentials (Gmail SMTP recommended)
-- Firebase Admin SDK credentials
-- Weather API key (optional)
-
-5. Start the server:
-```bash
-npm run dev
-```
-
-Backend will run on `http://localhost:5000`
-
-### Frontend Setup
-
-1. Navigate to frontend folder:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file (copy from `.env.example`):
-```bash
-cp .env.example .env
-```
-
-4. Configure Firebase credentials in `.env`:
-- Firebase API key
-- Firebase project details
-- VAPID key for push notifications
-
-5. Start the development server:
-```bash
-npm run dev
-```
-
-Frontend will run on `http://localhost:3000`
-
-## Firebase Setup
-
-1. Create a Firebase project at https://console.firebase.google.com
-2. Enable Firebase Cloud Messaging
-3. Enable Firebase Storage
-4. Download service account key for backend
-5. Get web app config for frontend
-6. Generate VAPID key for web push
-
-## MongoDB Setup
-
-### Local MongoDB
-```bash
-mongod --dbpath /path/to/data/directory
-```
-
-### MongoDB Atlas (Cloud)
-1. Create account at https://www.mongodb.com/cloud/atlas
-2. Create cluster
-3. Get connection string
-4. Add to `.env` file
-
-## Email Configuration
-
-For Nodemailer with Gmail:
-1. Enable 2-factor authentication on Google account
-2. Generate App Password
-3. Use App Password in `.env` EMAIL_PASS field
+- MongoDB + Mongoose
+- JWT auth
+- bcryptjs password hashing
+- Nodemailer
+- Firebase Admin SDK
 
 ## Project Structure
 
 ```
-Rythusethu_Project/
+RythuSethu-project/
 ├── backend/
-│   ├── config/         # Database, Firebase, Nodemailer config
-│   ├── models/         # MongoDB schemas
-│   ├── routes/         # API routes
-│   ├── middleware/     # Auth middleware
-│   ├── server.js       # Entry point
-│   └── package.json
-│
+│   ├── config/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── middleware/
+│   ├── seed.js
+│   ├── createAdmin.js
+│   └── server.js
 └── frontend/
     ├── src/
-    │   ├── components/ # Reusable components
-    │   ├── pages/      # Page components
-    │   ├── context/    # Auth & Language context
-    │   ├── utils/      # API client, translations
-    │   ├── App.jsx     # Main app component
-    │   └── main.jsx    # Entry point
-    ├── index.html
-    └── package.json
+    │   ├── components/
+    │   ├── context/
+    │   ├── locales/
+    │   ├── pages/
+    │   ├── utils/
+    │   ├── App.jsx
+    │   └── main.jsx
+    └── vite.config.js
 ```
 
-## API Endpoints
+## Route Map
 
-### Authentication
-- POST `/api/auth/register` - Register new user
-- POST `/api/auth/login` - User login
-- GET `/api/auth/profile` - Get user profile
-- PUT `/api/auth/profile` - Update user profile
+### Frontend Routes
 
-### Crop Advisor
-- POST `/api/crop/recommend` - Get crop recommendations
-- GET `/api/crop/fertilizer/:cropName` - Get fertilizer advice
-- GET `/api/crop/all` - Get all crops
+- `/` home
+- `/login`
+- `/register`
+- `/dashboard`
+- `/crop-advisor`
+- `/weather`
+- `/storage-finder`
+- `/marketplace`
+- `/marketplace/:id`
+- `/marketplace/add`
+- `/schemes`
+- `/agent-hub`
+- `/forum`
+- `/forum/:id`
+- `/profile`
+- `/crop-prices`
+- `/dealer-dashboard`
+- `/admin-dashboard`
 
-### Marketplace
-- GET `/api/marketplace` - Get all products
-- GET `/api/marketplace/:id` - Get single product
-- POST `/api/marketplace` - Create product
-- PUT `/api/marketplace/:id` - Update product
-- DELETE `/api/marketplace/:id` - Delete product
+### Backend Routes
 
-### Weather & Soil
-- GET `/api/weather/forecast` - Get weather forecast
-- GET `/api/weather/soil` - Get soil insights
-- GET `/api/weather/combined` - Get both weather and soil data
+- `/api/auth`
+- `/api/crop`
+- `/api/weather`
+- `/api/marketplace`
+- `/api/schemes`
+- `/api/agent`
+- `/api/forum`
+- `/api/notifications`
+- `/api/price-analytics`
+- `/api/storage`
+- `/api/dealer`
+- `/api/admin`
+- `/api/farmer`
+- `/api/public`
+- `/api/crop-prices`
+- `/api/bookings`
+- `/api/ratings`
+- `/api/buying-rates`
 
-### Government Schemes
-- GET `/api/schemes` - Get all schemes
-- GET `/api/schemes/:id` - Get single scheme
+## Default Demo Accounts
 
-### Agent Hub
-- GET `/api/agent/programs` - Get all programs
-- GET `/api/agent/jobs` - Get all jobs
-- POST `/api/agent/programs/:id/apply` - Apply to program
-- POST `/api/agent/jobs/:id/apply` - Apply to job
-- GET `/api/agent/updates/weekly` - Get weekly updates
+These are the accounts currently seeded in the database.
 
-### Community Forum
-- GET `/api/forum` - Get all posts
-- GET `/api/forum/:id` - Get single post
-- POST `/api/forum` - Create post
-- POST `/api/forum/:id/like` - Like post
-- POST `/api/forum/:id/comment` - Add comment
+- Admin: `admin@rythusethu.in` / `admin123`
+- Farmer: `farmer.demo@rythusethu.demo` / `Demo@123`
+- Dealer: `dealer.demo@rythusethu.demo` / `Demo@123`
 
-### Notifications
-- GET `/api/notifications` - Get user notifications
-- POST `/api/notifications/send-push` - Send push notification
-- POST `/api/notifications/send-email` - Send email notification
+## Setup
 
-## Default User Roles
+### Backend
 
-- **farmer**: Can sell products, get crop advice, join forum
-- **buyer**: Can buy products, join forum
-- **expert**: Can provide advice, join forum
-- **admin**: Full access
+```bash
+cd backend
+npm install
+npm run dev
+```
 
-## Future Enhancements
+### Frontend
 
-- Replace dummy AI crop advisor with real ML model/API
-- Integrate real weather API (OpenWeatherMap, etc.)
-- Add payment gateway for marketplace
-- Implement auto-apply for government schemes
-- Add video consultation with experts
-- Mobile app (React Native)
-- Advanced analytics dashboard
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## License
+Frontend runs on Vite’s default dev port, usually `http://localhost:5173`.
 
-MIT
+## Environment Variables
 
-## Support
+### Backend
 
-For issues and questions, please create an issue in the repository.
+- `MONGODB_URI`
+- `JWT_SECRET`
+- `PORT`
+- `EMAIL_USER`
+- `EMAIL_PASS`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+- `WEATHER_API_KEY` or `OPENWEATHER_API_KEY`
+
+### Frontend
+
+- `VITE_API_URL`
+- Firebase web config values
+
+## Seed Notes
+
+- `backend/seed.js` resets the demo database and creates only the admin, demo farmer, and demo dealer.
+- The demo dealer is linked to crop-price listings so the crop-prices page has bookable data.
+- Use the seed only for local/demo environments because it clears existing data.
+
+## Validation Notes
+
+- Frontend production build passes.
+- Backend weather endpoint returns data for authenticated users.
+- Crop-prices endpoint returns dealer listings for the seeded location filters.
+
+## Deployment Notes
+
+1. Set production environment variables for backend and frontend.
+2. Run the frontend build with `npm run build` in `frontend`.
+3. Start the backend with `npm run start` in `backend`.
+4. Ensure MongoDB is reachable from the deployed backend.
+5. Verify the auth, crop-prices, weather, and marketplace flows after deployment.
+
+## Known Caveats
+
+- The weather page depends on the logged-in user’s location if available.
+- Demo data is intentionally minimal right now.
+- If you want production data, replace the seed data with your real users and listings before deploying.

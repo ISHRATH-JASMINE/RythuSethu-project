@@ -350,7 +350,7 @@ const DealerDashboard = () => {
   // Booking operations
   const handleUpdateBookingStatus = async (bookingId, status) => {
     try {
-      await api.patch(`/api/bookings/${bookingId}/status`, { status })
+      await api.patch(`/bookings/${bookingId}/status`, { status })
       toast.success(`Booking ${status.toLowerCase()} successfully!`)
       fetchBookings()
       fetchStats()

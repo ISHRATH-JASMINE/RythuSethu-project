@@ -58,7 +58,7 @@ router.get('/', async (req, res) => {
     }
     
     const cropPrices = await CropPrice.find(query)
-      .populate('postedBy dealer', 'name phone email dealerInfo')
+      .populate('postedBy', 'name phone email dealerInfo')
       .sort(sortOptions)
       .limit(parseInt(limit));
     
@@ -152,7 +152,7 @@ router.get('/top-deals', async (req, res) => {
     }
     
     const topDeals = await CropPrice.find(query)
-      .populate('postedBy dealer', 'name phone email dealerInfo')
+      .populate('postedBy', 'name phone email dealerInfo')
       .sort({ pricePerQuintal: -1, price: -1 })
       .limit(3);
     

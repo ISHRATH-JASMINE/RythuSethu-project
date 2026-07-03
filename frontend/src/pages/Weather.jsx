@@ -2,21 +2,25 @@ import { useState, useEffect } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { t } from '../utils/translations'
 import api from '../utils/api'
+import { useAuth } from '../context/AuthContext'
 import { FaCloudSun, FaCloudRain, FaSun, FaCloud, FaBolt } from 'react-icons/fa'
 
 const Weather = () => {
   const { language } = useLanguage()
+  const { user } = useAuth()
   const [weatherData, setWeatherData] = useState(null)
   const [soilData, setSoilData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchWeatherAndSoil()
-  }, [])
+  }, [user])
 
   const fetchWeatherAndSoil = async () => {
     try {
-      const { data } = await api.get('/weather/combined')
+      const location = user?.location?.district || user?.location?.state || ''
+      const query = location ? `?location=${encodeURIComponent(location)}` : ''
+      const { data } = await api.get(`/weather/combined${query}`)
       setWeatherData(data.weather)
       setSoilData(data.soil)
     } catch (error) {

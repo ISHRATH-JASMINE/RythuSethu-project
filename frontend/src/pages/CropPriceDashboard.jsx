@@ -40,12 +40,36 @@ const CropPriceDashboard = () => {
   const [sortBy, setSortBy] = useState('price');
   const [hasSearched, setHasSearched] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  const normalizeListing = (listing) => {
+    const dealerId = listing.postedBy?._id || listing.dealer?._id || listing.dealerId || '';
+    const dealerName =
+      listing.dealerName ||
+      listing.postedBy?.dealerInfo?.businessName ||
+      listing.postedBy?.name ||
+      listing.dealer?.name ||
+      'Unknown Dealer';
+
+    const pricePerQuintal = listing.pricePerQuintal ?? listing.price ?? 0;
+    const pricePerKg =
+      listing.pricePerKg ??
+      (pricePerQuintal ? Number((pricePerQuintal / 100).toFixed(2)) : 0);
+
+    return {
+      ...listing,
+      dealerId,
+      dealerName,
+      pricePerQuintal,
+      pricePerKg,
+    };
+  };
   
   // Booking modal state
   const [bookingModal, setBookingModal] = useState({
     isOpen: false,
     dealer: null,
     dealerId: null,
+    listingId: null,
     cropName: '',
     dealerName: ''
   });
@@ -81,8 +105,9 @@ const CropPriceDashboard = () => {
     
     setBookingModal({
       isOpen: true,
-      dealer: rate.dealer,
-      dealerId: rate.dealer._id,
+      dealer: rate.postedBy || rate.dealer || null,
+      dealerId: rate.dealerId || rate.postedBy?._id || rate.dealer?._id,
+      listingId: rate._id,
       cropName: rate.cropName,
       dealerName: rate.dealerName
     });
@@ -93,6 +118,7 @@ const CropPriceDashboard = () => {
       isOpen: false,
       dealer: null,
       dealerId: null,
+      listingId: null,
       cropName: '',
       dealerName: ''
     });
@@ -106,10 +132,13 @@ const CropPriceDashboard = () => {
         showToast('Booking created successfully! The dealer will confirm soon.', 'success');
         handleCloseBooking();
         
-        // Increment inquiries for the rate
-        const rateId = cropPrices.find(r => r.dealer?._id === bookingData.dealerId)?._id;
-        if (rateId) {
-          await api.post(`/buying-rates/${rateId}/inquiry`);
+        // Increment inquiry count for the crop-price listing when available
+        if (bookingData.listingId) {
+          try {
+            await api.post(`/public/prices/${bookingData.listingId}/inquiry`);
+          } catch (inquiryError) {
+            console.warn('Inquiry tracking failed:', inquiryError);
+          }
         }
       }
     } catch (error) {
@@ -223,40 +252,27 @@ const CropPriceDashboard = () => {
       // Fetch buying rates from dealers
       const params = new URLSearchParams();
       if (selectedCrop) params.append('cropName', selectedCrop);
+      if (location.state) params.append('state', location.state);
       if (location.district) params.append('district', location.district);
+      if (location.village) params.append('village', location.village);
       
-      // Adjust sorting parameter names for buying rates API
-      let sortParam = 'recent';
-      if (sortBy === 'price') sortParam = 'price-high';
-      else if (sortBy === 'price-asc') sortParam = 'price-low';
-      else if (sortBy === 'recent') sortParam = 'recent';
-      
-      params.append('sortBy', sortParam);
+      // Send the crop-price sort value directly
+      params.append('sortBy', sortBy);
 
-      const response = await api.get(`/buying-rates/search?${params.toString()}`);
+      const [pricesResponse, topDealsResponse] = await Promise.all([
+        api.get(`/crop-prices?${params.toString()}`),
+        api.get(`/crop-prices/top-deals?${params.toString()}`)
+      ]);
       
-      if (response.data.success) {
-        const ratesWithDealerInfo = response.data.rates || [];
-        setCropPrices(ratesWithDealerInfo);
-        
-        // Calculate statistics from the fetched data
-        if (ratesWithDealerInfo.length > 0) {
-          const prices = ratesWithDealerInfo.map(r => r.buyPricePerQuintal);
-          setStatistics({
-            avgPrice: Math.round(prices.reduce((a, b) => a + b, 0) / prices.length),
-            maxPrice: Math.max(...prices),
-            minPrice: Math.min(...prices),
-            dealerCount: ratesWithDealerInfo.length
-          });
-        } else {
-          setStatistics(null);
-        }
+      if (pricesResponse.data.success) {
+        const pricesWithDealerInfo = (pricesResponse.data.data || pricesResponse.data.prices || [])
+          .map(normalizeListing);
+        setCropPrices(pricesWithDealerInfo);
+        setStatistics(pricesResponse.data.statistics || null);
 
-        // Set top deals from available rates (highest prices)
-        const topRates = [...ratesWithDealerInfo]
-          .sort((a, b) => b.buyPricePerQuintal - a.buyPricePerQuintal)
-          .slice(0, 3);
-        setTopDeals(topRates);
+        const topDealListings = (topDealsResponse.data.data || topDealsResponse.data.topDeals || [])
+          .map(normalizeListing);
+        setTopDeals(topDealListings);
       }
     } catch (error) {
       console.error('Error fetching crop prices:', error);
@@ -280,6 +296,12 @@ const CropPriceDashboard = () => {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && location.district && !hasSearched) {
+      fetchCropPrices();
+    }
+  }, [user, location.district, hasSearched]);
 
   // Remove auto-fetch on location change - only fetch on manual refresh
   // This prevents the annoying behavior of fetching on every keystroke
@@ -342,6 +364,8 @@ const CropPriceDashboard = () => {
       </button>
     </div>
   );
+
+  const displayedPrices = cropPrices.length > 0 ? cropPrices : topDeals;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
@@ -513,14 +537,14 @@ const CropPriceDashboard = () => {
                     <div className="space-y-3">
                       <div className="flex items-baseline">
                         <span className="text-4xl font-bold text-green-600">
-                          ₹{deal.buyPricePerQuintal}
+                          ₹{deal.pricePerQuintal}
                         </span>
                         <span className="text-gray-500 ml-2">/quintal</span>
                       </div>
 
                       <div className="flex items-baseline text-gray-700">
                         <span className="text-2xl font-semibold">
-                          ₹{deal.buyPricePerKg}
+                          ₹{deal.pricePerKg}
                         </span>
                         <span className="text-gray-500 ml-1">/kg</span>
                       </div>
@@ -579,13 +603,13 @@ const CropPriceDashboard = () => {
                 Select your filters and click "Refresh Prices" to see dealer offers
               </p>
             </div>
-          ) : cropPrices.length === 0 ? (
+          ) : displayedPrices.length === 0 ? (
             <div key="empty">
               <EmptyState />
             </div>
           ) : (
             <div key="results" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cropPrices.map((price, index) => (
+              {displayedPrices.map((price, index) => (
                 <motion.div
                   key={price._id}
                   initial={{ opacity: 0, y: 20 }}
@@ -640,12 +664,12 @@ const CropPriceDashboard = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-baseline">
                       <span className="text-3xl font-bold text-green-600">
-                        ₹{price.buyPricePerQuintal}
+                        ₹{price.pricePerQuintal}
                       </span>
                       <span className="text-gray-500 ml-2 text-sm">/quintal</span>
                     </div>
                     <div className="text-gray-700">
-                      ₹{price.buyPricePerKg}/kg
+                      ₹{price.pricePerKg}/kg
                     </div>
                   </div>
 
@@ -715,6 +739,7 @@ const CropPriceDashboard = () => {
                   dealerId={bookingModal.dealerId}
                   dealerName={bookingModal.dealerName}
                   cropName={bookingModal.cropName}
+                  listingId={bookingModal.listingId}
                   onSuccess={handleBookingSuccess}
                   onCancel={handleCloseBooking}
                 />
@@ -855,7 +880,7 @@ const CropPriceDashboard = () => {
 };
 
 // Booking Form Component
-const BookingForm = ({ dealerId, dealerName, cropName, onSuccess, onCancel }) => {
+const BookingForm = ({ dealerId, dealerName, cropName, listingId, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
     date: '',
     timeSlot: 'Morning',
@@ -870,6 +895,7 @@ const BookingForm = ({ dealerId, dealerName, cropName, onSuccess, onCancel }) =>
     const bookingData = {
       dealerId,
       cropName,
+      listingId,
       date: formData.date,
       timeSlot: formData.timeSlot,
       notes: formData.notes
