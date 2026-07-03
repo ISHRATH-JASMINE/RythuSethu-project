@@ -104,8 +104,6 @@ RythuSethu-project/
 ## Default Demo Accounts
 
 These are the accounts currently seeded in the database.
-
-- Admin: `admin@rythusethu.in` / `admin123`
 - Farmer: `farmer.demo@rythusethu.demo` / `Demo@123`
 - Dealer: `dealer.demo@rythusethu.demo` / `Demo@123`
 
