@@ -170,4 +170,3 @@ Frontend runs on Vite’s default dev port, usually `http://localhost:5173`.
 
 - The weather page depends on the logged-in user’s location if available.
 - Demo data is intentionally minimal right now.
-- If you want production data, replace the seed data with your real users and listings before deploying.
